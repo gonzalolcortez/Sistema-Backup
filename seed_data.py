@@ -1,5 +1,6 @@
 """Script para cargar datos de demostración."""
-from app import app, db
+from app import app
+from extensions import db
 from models import (Cliente, Categoria, Producto, Servicio,
                     Taller, TallerProducto, TallerServicio, MovimientoCaja)
 from datetime import datetime, timedelta

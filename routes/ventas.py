@@ -104,7 +104,7 @@ def nueva():
 
         mov = MovimientoCaja(
             tipo='ingreso',
-            concepto=f'Venta #{venta.id}{cliente_nombre if cliente_id else " - Mostrador"}',
+        concepto=f'Venta #{venta.id}{cliente_nombre or " - Mostrador"}',
             monto=total,
             referencia_tipo='venta',
             referencia_id=venta.id,

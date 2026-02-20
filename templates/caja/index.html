@@ -111,7 +111,7 @@
         {% if m.referencia_tipo not in ['taller', 'venta'] %}
         <form method="post" action="{{ url_for('caja.eliminar', id=m.id) }}"
               onsubmit="return confirm('¿Eliminar movimiento?')">
-          <button class="btn btn-xs btn-sm btn-outline-danger py-0 px-1"><i class="bi bi-trash"></i></button>
+          <button class="btn btn-sm btn-outline-danger py-0 px-1"><i class="bi bi-trash"></i></button>
         </form>
         {% endif %}
       </td>
