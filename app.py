@@ -1,6 +1,21 @@
 from flask import Flask
 from extensions import db
 import os
+import sqlalchemy as sa
+
+
+def _run_migrations(db):
+    """Apply any missing schema changes to an existing database."""
+    inspector = sa.inspect(db.engine)
+    if not inspector.has_table('taller'):
+        return
+    taller_columns = [col['name'] for col in inspector.get_columns('taller')]
+    if 'forma_pago' not in taller_columns:
+        with db.engine.begin() as conn:
+            conn.execute(sa.text(
+                "ALTER TABLE taller ADD COLUMN forma_pago VARCHAR(50) DEFAULT 'efectivo'"
+            ))
+
 
 def create_app():
     app = Flask(__name__)
@@ -30,6 +45,7 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        _run_migrations(db)
 
     return app
 
