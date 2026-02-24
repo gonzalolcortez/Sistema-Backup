@@ -48,6 +48,7 @@ def nuevo_producto():
         prod = Producto(
             nombre=request.form['nombre'].strip(),
             descripcion=request.form.get('descripcion', '').strip(),
+            codigo_barras=request.form.get('codigo_barras', '').strip(),
             categoria_id=request.form.get('categoria_id') or None,
             precio_compra=float(request.form.get('precio_compra') or 0),
             precio_venta=float(request.form['precio_venta']),
@@ -71,6 +72,7 @@ def editar_producto(id):
     if request.method == 'POST':
         prod.nombre = request.form['nombre'].strip()
         prod.descripcion = request.form.get('descripcion', '').strip()
+        prod.codigo_barras = request.form.get('codigo_barras', '').strip()
         prod.categoria_id = request.form.get('categoria_id') or None
         prod.precio_compra = float(request.form.get('precio_compra') or 0)
         prod.precio_venta = float(request.form['precio_venta'])

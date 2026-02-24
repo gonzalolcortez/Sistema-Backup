@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import db, Taller, TallerProducto, TallerServicio, Cliente, Producto, Servicio, MovimientoCaja
+from models import db, Taller, TallerProducto, TallerServicio, Cliente, Producto, Servicio, MovimientoCaja, FORMAS_PAGO, CUENTAS_CAJA
 from datetime import datetime
 
 taller_bp = Blueprint('taller', __name__)
@@ -80,7 +80,8 @@ def detalle(id):
     productos = Producto.query.filter_by(activo=True).order_by(Producto.nombre).all()
     servicios = Servicio.query.filter_by(activo=True).order_by(Servicio.nombre).all()
     return render_template('taller/detail.html', taller=taller, estados=ESTADOS,
-                           productos=productos, servicios=servicios)
+                           productos=productos, servicios=servicios,
+                           formas_pago=FORMAS_PAGO, cuentas_caja=CUENTAS_CAJA)
 
 
 @taller_bp.route('/<int:id>/editar', methods=['GET', 'POST'])
@@ -180,13 +181,17 @@ def entregar(id):
         flash('Esta orden ya fue entregada.', 'warning')
         return redirect(url_for('taller.detalle', id=id))
 
+    forma_pago = request.form.get('forma_pago', 'efectivo')
     taller.estado = 'entregado'
     taller.pagado = True
+    taller.forma_pago = forma_pago
     taller.fecha_entrega = datetime.utcnow()
 
     monto = taller.total_final
     mov = MovimientoCaja(
         tipo='ingreso',
+        cuenta='servicio_tecnico',
+        forma_pago=forma_pago,
         concepto=f'Reparación #{taller.numero} - {taller.cliente.nombre_completo}',
         monto=monto,
         referencia_tipo='taller',
@@ -221,3 +226,9 @@ def eliminar(id):
     db.session.commit()
     flash('Orden de taller eliminada.', 'success')
     return redirect(url_for('taller.index'))
+
+
+@taller_bp.route('/<int:id>/imprimir')
+def imprimir(id):
+    taller = Taller.query.get_or_404(id)
+    return render_template('taller/print.html', taller=taller)

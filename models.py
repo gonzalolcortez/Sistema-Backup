@@ -34,6 +34,7 @@ class Producto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(150), nullable=False)
     descripcion = db.Column(db.Text)
+    codigo_barras = db.Column(db.String(50))
     categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'))
     precio_compra = db.Column(db.Float, default=0.0)
     precio_venta = db.Column(db.Float, nullable=False)
@@ -80,6 +81,7 @@ class Taller(db.Model):
     fecha_entrega = db.Column(db.DateTime)
     tecnico = db.Column(db.String(100))
     pagado = db.Column(db.Boolean, default=False)
+    forma_pago = db.Column(db.String(50), default='efectivo')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     productos_usados = db.relationship('TallerProducto', backref='taller', lazy=True, cascade='all, delete-orphan')
@@ -139,6 +141,7 @@ class Venta(db.Model):
     descuento = db.Column(db.Float, default=0.0)
     total = db.Column(db.Float, default=0.0)
     pagado = db.Column(db.Boolean, default=True)
+    forma_pago = db.Column(db.String(50), default='efectivo')
     notas = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -161,6 +164,8 @@ class MovimientoCaja(db.Model):
     __tablename__ = 'movimientos_caja'
     id = db.Column(db.Integer, primary_key=True)
     tipo = db.Column(db.String(10), nullable=False)  # ingreso / egreso
+    cuenta = db.Column(db.String(50), default='otro')
+    forma_pago = db.Column(db.String(50), default='efectivo')
     concepto = db.Column(db.String(200), nullable=False)
     monto = db.Column(db.Float, nullable=False)
     referencia_tipo = db.Column(db.String(20))  # taller / venta / ajuste / otro
@@ -168,3 +173,25 @@ class MovimientoCaja(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     notas = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# Cuentas disponibles para movimientos de caja
+CUENTAS_CAJA = [
+    ('venta_productos', 'Venta de Productos'),
+    ('venta_repuestos', 'Venta de Repuestos'),
+    ('servicio_tecnico', 'Servicio Técnico'),
+    ('impuestos', 'Impuestos'),
+    ('alquiler', 'Alquiler'),
+    ('matias', 'Matias'),
+    ('compra_mercaderia', 'Compra de Mercadería'),
+    ('compra_repuestos', 'Compra de Repuestos'),
+    ('otro', 'Otro'),
+]
+
+# Formas de pago
+FORMAS_PAGO = [
+    ('efectivo', 'Efectivo'),
+    ('mercado_pago', 'Mercado Pago'),
+    ('tarjeta', 'Tarjetas'),
+    ('cuenta_corriente', 'Cuenta Corriente Gonzalo'),
+]

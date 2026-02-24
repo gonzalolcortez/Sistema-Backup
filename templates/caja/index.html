@@ -9,8 +9,8 @@
 {% endblock %}
 
 {% block content %}
-<!-- Resumen -->
-<div class="row g-3 mb-4">
+<!-- Resumen totales -->
+<div class="row g-3 mb-3">
   <div class="col-sm-4">
     <div class="card stat-card border-0 h-100">
       <div class="card-body d-flex align-items-center gap-3">
@@ -48,6 +48,24 @@
   </div>
 </div>
 
+<!-- Saldos por forma de pago -->
+<div class="form-card mb-3">
+  <div class="section-title mb-2">Saldo por Forma de Pago</div>
+  <div class="row g-2">
+    {% for fp_val, fp_label in formas_pago %}
+    {% set saldo = saldos_fp.get(fp_val, 0) %}
+    <div class="col-6 col-sm-3">
+      <div class="border rounded p-2 text-center h-100">
+        <div class="small text-muted fw-semibold">{{ fp_label }}</div>
+        <div class="fw-bold fs-6 {% if saldo >= 0 %}text-success{% else %}text-danger{% endif %}">
+          ${{ "%.2f"|format(saldo) }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
 <!-- Filtros -->
 <div class="form-card mb-3">
   <form method="get" class="row g-2 align-items-end">
@@ -79,7 +97,7 @@
   {% if movimientos %}
   <table class="table table-hover">
     <thead>
-      <tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Referencia</th><th class="text-end">Monto</th><th></th></tr>
+      <tr><th>Fecha</th><th>Tipo</th><th>Cuenta</th><th>Forma de Pago</th><th>Concepto</th><th class="text-end">Monto</th><th></th></tr>
     </thead>
     <tbody>
     {% for m in movimientos %}
@@ -92,18 +110,19 @@
           <span class="badge" style="background:#fee2e2;color:#991b1b"><i class="bi bi-arrow-up me-1"></i>Egreso</span>
         {% endif %}
       </td>
-      <td>{{ m.concepto }}</td>
-      <td class="small text-muted">
+      <td class="small">
         {% if m.referencia_tipo == 'taller' %}
-          <a href="{{ url_for('taller.detalle', id=m.referencia_id) }}" class="text-decoration-none">
+          <a href="{{ url_for('taller.detalle', id=m.referencia_id) }}" class="text-decoration-none small">
             <i class="bi bi-wrench me-1"></i>Taller #{{ m.referencia_id }}
           </a>
         {% elif m.referencia_tipo == 'venta' %}
-          <i class="bi bi-cart me-1"></i>Venta #{{ m.referencia_id }}
+          <span class="small"><i class="bi bi-cart me-1"></i>Venta #{{ m.referencia_id }}</span>
         {% else %}
-          {{ m.referencia_tipo or '—' }}
+          <span class="small text-muted">{{ dict(cuentas_caja).get(m.cuenta or 'otro', m.cuenta or '—') }}</span>
         {% endif %}
       </td>
+      <td class="small text-muted">{{ dict(formas_pago).get(m.forma_pago or 'efectivo', m.forma_pago or '—') }}</td>
+      <td>{{ m.concepto }}</td>
       <td class="text-end fw-bold {% if m.tipo == 'ingreso' %}text-success{% else %}text-danger{% endif %}">
         {% if m.tipo == 'egreso' %}-{% endif %}${{ "%.2f"|format(m.monto) }}
       </td>

@@ -16,19 +16,28 @@
             </select>
           </div>
           <div class="col-sm-6">
-            <label class="form-label fw-semibold">Categoría</label>
-            <select name="referencia_tipo" class="form-select">
-              <option value="otro">Otro</option>
-              <option value="ajuste">Ajuste</option>
+            <label class="form-label fw-semibold">Cuenta *</label>
+            <select name="cuenta" class="form-select" required>
+              {% for val, label in cuentas %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
             </select>
           </div>
-          <div class="col-12">
-            <label class="form-label fw-semibold">Concepto *</label>
-            <input type="text" name="concepto" class="form-control" required placeholder="Descripción del movimiento…">
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold">Forma de Pago *</label>
+            <select name="forma_pago" class="form-select" required>
+              {% for val, label in formas_pago %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
           </div>
           <div class="col-sm-6">
             <label class="form-label fw-semibold">Monto ($) *</label>
             <input type="number" name="monto" class="form-control" step="0.01" min="0.01" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Concepto *</label>
+            <input type="text" name="concepto" class="form-control" required placeholder="Descripción del movimiento…">
           </div>
           <div class="col-12">
             <label class="form-label fw-semibold">Notas</label>

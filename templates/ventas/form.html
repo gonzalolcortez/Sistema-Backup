@@ -31,7 +31,15 @@
             <input type="number" name="descuento" id="descuento" class="form-control" step="0.01" min="0" value="0"
                    oninput="calcTotal()">
           </div>
-          <div class="col-12">
+          <div class="col-sm-8">
+            <label class="form-label fw-semibold">Forma de Pago *</label>
+            <select name="forma_pago" class="form-select" required>
+              {% for val, label in formas_pago %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-sm-4">
             <label class="form-label fw-semibold">Notas</label>
             <input type="text" name="notas" class="form-control" placeholder="Opcional…">
           </div>

@@ -13,7 +13,12 @@
             <label class="form-label fw-semibold">Nombre *</label>
             <input type="text" name="nombre" class="form-control" required value="{{ producto.nombre if producto else '' }}">
           </div>
-          <div class="col-12">
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold">Código de Barras</label>
+            <input type="text" name="codigo_barras" class="form-control" placeholder="Ej: 7790001234567"
+                   value="{{ producto.codigo_barras if producto and producto.codigo_barras else '' }}">
+          </div>
+          <div class="col-sm-6">
             <label class="form-label fw-semibold">Descripción</label>
             <textarea name="descripcion" class="form-control" rows="2">{{ producto.descripcion if producto else '' }}</textarea>
           </div>
