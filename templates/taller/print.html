@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Orden #{{ taller.numero }} — Mendotecn</title>
+  <style>
+    @page { size: A5; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #111; margin: 0; }
+
+    /* Header */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1a1f2e; padding-bottom: 8px; margin-bottom: 10px; }
+    .header .brand { }
+    .header .brand h1 { font-size: 20px; margin: 0 0 2px; color: #1a1f2e; }
+    .header .brand p { margin: 2px 0; font-size: 10px; color: #555; }
+    .header .orden { text-align: right; }
+    .header .orden .num { font-size: 22px; font-weight: bold; color: #1a1f2e; }
+    .header .orden .estado { font-size: 10px; background: #e0e7ff; color: #3730a3; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+
+    /* Sections */
+    .section { margin-bottom: 8px; }
+    .section-title { font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; border-bottom: 1px solid #e5e7eb; padding-bottom: 2px; margin-bottom: 5px; }
+
+    /* Grid */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    .field { margin-bottom: 4px; }
+    .field label { font-size: 9px; color: #6b7280; display: block; }
+    .field span { font-size: 11px; font-weight: 600; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    table thead tr { background: #f0f2f5; }
+    table th { padding: 4px 6px; text-align: left; font-size: 9px; text-transform: uppercase; color: #6b7280; }
+    table td { padding: 4px 6px; border-bottom: 1px solid #f0f2f5; }
+    table .text-right { text-align: right; }
+    table tfoot td { font-weight: bold; border-top: 1px solid #e5e7eb; padding-top: 5px; }
+
+    /* Total */
+    .total-box { background: #1a1f2e; color: #fff; padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .total-box .label { font-size: 11px; }
+    .total-box .amount { font-size: 18px; font-weight: bold; }
+
+    /* Footer */
+    .footer { margin-top: 12px; border-top: 1px dashed #ccc; padding-top: 8px; display: flex; justify-content: space-between; }
+    .footer .shop { font-size: 10px; color: #555; }
+    .footer .firma { font-size: 10px; color: #555; text-align: right; }
+
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Print button (hidden on print) -->
+<div class="no-print" style="margin-bottom:12px; text-align:right">
+  <button onclick="window.print()" style="padding:6px 16px; background:#1a1f2e; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px;">
+    🖨 Imprimir
+  </button>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="brand">
+    <h1>Mendotecn</h1>
+    <p>San Juan 721, Mendoza</p>
+    <p>WhatsApp: +54 9 2617 23-4524</p>
+  </div>
+  <div class="orden">
+    <div class="num">Orden #{{ taller.numero }}</div>
+    <div class="estado">{{ taller.estado_display }}</div>
+    <div style="font-size:10px;color:#555;margin-top:4px;">{{ taller.fecha_ingreso.strftime('%d/%m/%Y') }}</div>
+  </div>
+</div>
+
+<!-- Cliente -->
+<div class="section">
+  <div class="section-title">Datos del Cliente</div>
+  <div class="grid2">
+    <div class="field"><label>Nombre</label><span>{{ taller.cliente.nombre_completo }}</span></div>
+    <div class="field"><label>Teléfono</label><span>{{ taller.cliente.telefono or '—' }}</span></div>
+    {% if taller.cliente.email %}
+    <div class="field"><label>Email</label><span>{{ taller.cliente.email }}</span></div>
+    {% endif %}
+    {% if taller.cliente.direccion %}
+    <div class="field"><label>Dirección</label><span>{{ taller.cliente.direccion }}</span></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Equipo -->
+<div class="section">
+  <div class="section-title">Datos del Equipo</div>
+  <div class="grid2">
+    <div class="field"><label>Tipo</label><span>{{ taller.tipo_equipo or '—' }}</span></div>
+    <div class="field"><label>Marca / Modelo</label><span>{{ taller.marca }} {{ taller.modelo }}</span></div>
+  </div>
+  <div class="field" style="margin-top:4px"><label>Problema Reportado</label><span>{{ taller.descripcion_problema }}</span></div>
+  {% if taller.observaciones %}
+  <div class="field"><label>Observaciones</label><span>{{ taller.observaciones }}</span></div>
+  {% endif %}
+</div>
+
+<!-- Detalles de la orden -->
+<div class="section">
+  <div class="section-title">Detalles de la Orden</div>
+  <div class="grid2">
+    <div class="field"><label>Ingreso</label><span>{{ taller.fecha_ingreso.strftime('%d/%m/%Y') }}</span></div>
+    {% if taller.fecha_estimada_entrega %}
+    <div class="field"><label>Entrega estimada</label><span>{{ taller.fecha_estimada_entrega.strftime('%d/%m/%Y') }}</span></div>
+    {% endif %}
+    {% if taller.tecnico %}
+    <div class="field"><label>Técnico</label><span>{{ taller.tecnico }}</span></div>
+    {% endif %}
+    <div class="field"><label>Costo estimado</label><span>${{ "%.2f"|format(taller.costo_estimado) }}</span></div>
+  </div>
+</div>
+
+<!-- Repuestos -->
+{% if taller.productos_usados %}
+<div class="section">
+  <div class="section-title">Repuestos Utilizados</div>
+  <table>
+    <thead><tr><th>Repuesto</th><th class="text-right">Cant.</th><th class="text-right">P.Unit.</th><th class="text-right">Subtotal</th></tr></thead>
+    <tbody>
+    {% for tp in taller.productos_usados %}
+    <tr>
+      <td>{{ tp.producto.nombre }}</td>
+      <td class="text-right">{{ tp.cantidad }}</td>
+      <td class="text-right">${{ "%.2f"|format(tp.precio_unitario) }}</td>
+      <td class="text-right">${{ "%.2f"|format(tp.cantidad * tp.precio_unitario) }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3" class="text-right">Subtotal repuestos</td><td class="text-right">${{ "%.2f"|format(taller.total_productos) }}</td></tr>
+    </tfoot>
+  </table>
+</div>
+{% endif %}
+
+<!-- Servicios -->
+{% if taller.servicios_usados %}
+<div class="section">
+  <div class="section-title">Servicios</div>
+  <table>
+    <thead><tr><th>Servicio</th><th class="text-right">Precio</th></tr></thead>
+    <tbody>
+    {% for ts in taller.servicios_usados %}
+    <tr>
+      <td>{{ ts.servicio.nombre }}</td>
+      <td class="text-right">${{ "%.2f"|format(ts.precio) }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td class="text-right">Subtotal servicios</td><td class="text-right">${{ "%.2f"|format(taller.total_servicios) }}</td></tr>
+    </tfoot>
+  </table>
+</div>
+{% endif %}
+
+<!-- Total -->
+<div class="total-box">
+  <span class="label">TOTAL A ABONAR</span>
+  <span class="amount">${{ "%.2f"|format(taller.total_final) }}</span>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="shop">
+    <strong>Mendotecn</strong><br>
+    San Juan 721, Mendoza<br>
+    WhatsApp: +54 9 2617 23-4524
+  </div>
+  <div class="firma">
+    Firma cliente: ___________________________<br><br>
+    Aclaración: ___________________________
+  </div>
+</div>
+
+</body>
+</html>

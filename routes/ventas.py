@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import db, Venta, VentaItem, Producto, Servicio, Cliente, MovimientoCaja
+from models import db, Venta, VentaItem, Producto, Servicio, Cliente, MovimientoCaja, FORMAS_PAGO
 from datetime import datetime
 
 ventas_bp = Blueprint('ventas', __name__)
@@ -24,6 +24,7 @@ def nueva():
         cliente_id = request.form.get('cliente_id') or None
         descuento = float(request.form.get('descuento') or 0)
         notas = request.form.get('notas', '').strip()
+        forma_pago = request.form.get('forma_pago', 'efectivo')
 
         tipos = request.form.getlist('item_tipo[]')
         item_ids = request.form.getlist('item_id[]')
@@ -32,12 +33,14 @@ def nueva():
         if not tipos:
             flash('Debe agregar al menos un producto o servicio.', 'danger')
             return render_template('ventas/form.html', clientes=clientes,
-                                   productos=productos_json, servicios=servicios_json)
+                                   productos=productos_json, servicios=servicios_json,
+                                   formas_pago=FORMAS_PAGO)
 
         venta = Venta(
             cliente_id=cliente_id,
             descuento=descuento,
             notas=notas,
+            forma_pago=forma_pago,
             fecha=datetime.utcnow(),
         )
         db.session.add(venta)
@@ -74,7 +77,8 @@ def nueva():
             for e in errores:
                 flash(e, 'danger')
             return render_template('ventas/form.html', clientes=clientes,
-                                   productos=productos_json, servicios=servicios_json)
+                                   productos=productos_json, servicios=servicios_json,
+                                   formas_pago=FORMAS_PAGO)
 
         for tipo, obj, cant, precio, sub in items_ok:
             vi = VentaItem(
@@ -104,7 +108,9 @@ def nueva():
 
         mov = MovimientoCaja(
             tipo='ingreso',
-        concepto=f'Venta #{venta.id}{cliente_nombre or " - Mostrador"}',
+            cuenta='venta_productos',
+            forma_pago=forma_pago,
+            concepto=f'Venta #{venta.id}{cliente_nombre or " - Mostrador"}',
             monto=total,
             referencia_tipo='venta',
             referencia_id=venta.id,
@@ -116,7 +122,8 @@ def nueva():
         return redirect(url_for('ventas.index'))
 
     return render_template('ventas/form.html', clientes=clientes,
-                           productos=productos_json, servicios=servicios_json)
+                           productos=productos_json, servicios=servicios_json,
+                           formas_pago=FORMAS_PAGO)
 
 
 @ventas_bp.route('/<int:id>/eliminar', methods=['POST'])

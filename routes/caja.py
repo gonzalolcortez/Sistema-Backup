@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import db, MovimientoCaja
+from models import db, MovimientoCaja, CUENTAS_CAJA, FORMAS_PAGO
 from datetime import datetime, date
+from sqlalchemy import func
 
 caja_bp = Blueprint('caja', __name__)
 
@@ -32,6 +33,21 @@ def index():
     total_egresos = sum(m.monto for m in movimientos if m.tipo == 'egreso')
     balance = total_ingresos - total_egresos
 
+    # Saldos por forma de pago usando agregación DB (todos los movimientos, sin filtro)
+    rows_ing = db.session.query(
+        MovimientoCaja.forma_pago, func.sum(MovimientoCaja.monto)
+    ).filter_by(tipo='ingreso').group_by(MovimientoCaja.forma_pago).all()
+
+    rows_egr = db.session.query(
+        MovimientoCaja.forma_pago, func.sum(MovimientoCaja.monto)
+    ).filter_by(tipo='egreso').group_by(MovimientoCaja.forma_pago).all()
+
+    saldos_fp = {}
+    for fp, total in rows_ing:
+        saldos_fp[fp or 'efectivo'] = saldos_fp.get(fp or 'efectivo', 0.0) + total
+    for fp, total in rows_egr:
+        saldos_fp[fp or 'efectivo'] = saldos_fp.get(fp or 'efectivo', 0.0) - total
+
     return render_template('caja/index.html',
                            movimientos=movimientos,
                            total_ingresos=total_ingresos,
@@ -39,7 +55,10 @@ def index():
                            balance=balance,
                            fecha_desde=fecha_desde,
                            fecha_hasta=fecha_hasta,
-                           tipo=tipo)
+                           tipo=tipo,
+                           saldos_fp=saldos_fp,
+                           formas_pago=FORMAS_PAGO,
+                           cuentas_caja=CUENTAS_CAJA)
 
 
 @caja_bp.route('/nuevo', methods=['GET', 'POST'])
@@ -47,9 +66,11 @@ def nuevo():
     if request.method == 'POST':
         mov = MovimientoCaja(
             tipo=request.form['tipo'],
+            cuenta=request.form.get('cuenta', 'otro'),
+            forma_pago=request.form.get('forma_pago', 'efectivo'),
             concepto=request.form['concepto'].strip(),
             monto=float(request.form['monto']),
-            referencia_tipo=request.form.get('referencia_tipo', 'otro'),
+            referencia_tipo='manual',
             notas=request.form.get('notas', '').strip(),
             fecha=datetime.utcnow(),
         )
@@ -57,7 +78,7 @@ def nuevo():
         db.session.commit()
         flash('Movimiento registrado en Caja.', 'success')
         return redirect(url_for('caja.index'))
-    return render_template('caja/form.html')
+    return render_template('caja/form.html', cuentas=CUENTAS_CAJA, formas_pago=FORMAS_PAGO)
 
 
 @caja_bp.route('/<int:id>/eliminar', methods=['POST'])
