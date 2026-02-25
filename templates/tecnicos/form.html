@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="form-card">
+      <form method="post">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label fw-semibold">Nombre del Técnico *</label>
+            <input type="text" name="nombre" class="form-control" required
+                   value="{{ tecnico.nombre if tecnico else '' }}" placeholder="Ej: Juan Pérez">
+          </div>
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="esTercerizado" name="es_tercerizado" value="1"
+                     {% if tecnico and tecnico.es_tercerizado %}checked{% endif %}
+                     onchange="document.getElementById('rowEmpresa').style.display = this.checked ? '' : 'none'">
+              <label class="form-check-label fw-semibold" for="esTercerizado">Técnico Tercerizado</label>
+            </div>
+          </div>
+          <div class="col-12" id="rowEmpresa" style="{{ '' if (tecnico and tecnico.es_tercerizado) else 'display:none' }}">
+            <label class="form-label fw-semibold">Empresa Tercerizada</label>
+            <input type="text" name="empresa_tercerizado" class="form-control"
+                   value="{{ tecnico.empresa_tercerizado if tecnico and tecnico.empresa_tercerizado else '' }}"
+                   placeholder="Ej: Technocell">
+            <div class="form-text">Se mostrará como: Técnico Tercerizado - [Empresa]</div>
+          </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+          <a href="{{ url_for('tecnicos.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required
 from models import db, Producto
 
 stock_bp = Blueprint('stock', __name__)
 
 
 @stock_bp.route('/')
+@login_required
 def index():
     filtro = request.args.get('filtro', 'todos')
     query = Producto.query.filter_by(activo=True)
@@ -18,6 +20,7 @@ def index():
 
 
 @stock_bp.route('/ajuste/<int:id>', methods=['GET', 'POST'])
+@login_required
 def ajuste(id):
     producto = Producto.query.get_or_404(id)
     if request.method == 'POST':

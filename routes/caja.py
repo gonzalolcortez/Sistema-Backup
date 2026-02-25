@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required
 from models import db, MovimientoCaja, CUENTAS_CAJA, FORMAS_PAGO
 from datetime import datetime, date
 from sqlalchemy import func
@@ -7,6 +8,7 @@ caja_bp = Blueprint('caja', __name__)
 
 
 @caja_bp.route('/')
+@login_required
 def index():
     fecha_desde = request.args.get('fecha_desde', '')
     fecha_hasta = request.args.get('fecha_hasta', '')
@@ -62,6 +64,7 @@ def index():
 
 
 @caja_bp.route('/nuevo', methods=['GET', 'POST'])
+@login_required
 def nuevo():
     if request.method == 'POST':
         mov = MovimientoCaja(
@@ -82,6 +85,7 @@ def nuevo():
 
 
 @caja_bp.route('/<int:id>/eliminar', methods=['POST'])
+@login_required
 def eliminar(id):
     mov = MovimientoCaja.query.get_or_404(id)
     if mov.referencia_tipo in ('taller', 'venta'):

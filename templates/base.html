@@ -142,6 +142,9 @@
     <a href="{{ url_for('stock.index') }}" class="nav-link {% if request.blueprint == 'stock' %}active{% endif %}">
       <i class="bi bi-archive"></i> Stock
     </a>
+    <a href="{{ url_for('tecnicos.index') }}" class="nav-link {% if request.blueprint == 'tecnicos' %}active{% endif %}">
+      <i class="bi bi-person-gear"></i> Técnicos
+    </a>
 
     <div class="nav-label mt-2">Operaciones</div>
     <a href="{{ url_for('taller.index') }}" class="nav-link {% if request.blueprint == 'taller' %}active{% endif %}">
@@ -170,6 +173,14 @@
     <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
     <div class="ms-auto d-flex align-items-center gap-2">
       {% block topbar_actions %}{% endblock %}
+      {% if current_user.is_authenticated %}
+      <span class="text-muted small d-none d-sm-inline"><i class="bi bi-person-circle me-1"></i>{{ current_user.nombre }}</span>
+      <form method="post" action="{{ url_for('auth.logout') }}" class="d-inline">
+        <button class="btn btn-sm btn-outline-secondary" title="Cerrar sesión">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </form>
+      {% endif %}
     </div>
   </div>
 

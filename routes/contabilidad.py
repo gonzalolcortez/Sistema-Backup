@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request
+from flask_login import login_required
 from models import db, MovimientoCaja
 from datetime import datetime
 from sqlalchemy import func, extract
@@ -7,6 +8,7 @@ contabilidad_bp = Blueprint('contabilidad', __name__)
 
 
 @contabilidad_bp.route('/')
+@login_required
 def index():
     anio = request.args.get('anio', datetime.utcnow().year, type=int)
 
