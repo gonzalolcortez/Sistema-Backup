@@ -73,7 +73,7 @@
                 {{ tec.nombre_display }}
               </option>
               {% endfor %}
-              {% if taller and taller.tecnico and taller.tecnico not in (tecnicos|map(attribute='nombre_display')|list) %}
+              {% if taller and taller.tecnico and taller.tecnico not in tecnicos_nombres %}
               <option value="{{ taller.tecnico }}" selected>{{ taller.tecnico }}</option>
               {% endif %}
             </select>

@@ -41,7 +41,7 @@ def index():
         )
     # Orders with pending debt (entregado but unpaid) appear first
     talleres = query.order_by(
-        db.case((db.and_(Taller.estado == 'entregado', Taller.pagado == False), 0), else_=1),
+        db.case((db.and_(Taller.estado == 'entregado', Taller.pagado.is_(False)), 0), else_=1),
         Taller.created_at.desc()
     ).all()
     return render_template('taller/index.html', talleres=talleres, estados=ESTADOS,
@@ -53,6 +53,7 @@ def index():
 def nuevo():
     clientes = Cliente.query.order_by(Cliente.apellido).all()
     tecnicos = Tecnico.query.filter_by(activo=True).order_by(Tecnico.nombre).all()
+    tecnicos_nombres = [t.nombre_display for t in tecnicos]
     if request.method == 'POST':
         fecha_est = None
         if request.form.get('fecha_estimada_entrega'):
@@ -79,7 +80,8 @@ def nuevo():
         flash(f'Orden de taller #{taller.numero} creada correctamente.', 'success')
         return redirect(url_for('taller.detalle', id=taller.id))
     return render_template('taller/form.html', taller=None, clientes=clientes,
-                           estados=ESTADOS, tecnicos=tecnicos, titulo='Nueva Orden de Taller')
+                           estados=ESTADOS, tecnicos=tecnicos, tecnicos_nombres=tecnicos_nombres,
+                           titulo='Nueva Orden de Taller')
 
 
 @taller_bp.route('/<int:id>')
@@ -99,6 +101,7 @@ def editar(id):
     taller = Taller.query.get_or_404(id)
     clientes = Cliente.query.order_by(Cliente.apellido).all()
     tecnicos = Tecnico.query.filter_by(activo=True).order_by(Tecnico.nombre).all()
+    tecnicos_nombres = [t.nombre_display for t in tecnicos]
     if request.method == 'POST':
         fecha_est = taller.fecha_estimada_entrega
         if request.form.get('fecha_estimada_entrega'):
@@ -121,7 +124,8 @@ def editar(id):
         flash('Orden de taller actualizada.', 'success')
         return redirect(url_for('taller.detalle', id=taller.id))
     return render_template('taller/form.html', taller=taller, clientes=clientes,
-                           estados=ESTADOS, tecnicos=tecnicos, titulo=f'Editar Orden #{taller.numero}')
+                           estados=ESTADOS, tecnicos=tecnicos, tecnicos_nombres=tecnicos_nombres,
+                           titulo=f'Editar Orden #{taller.numero}')
 
 
 @taller_bp.route('/<int:id>/agregar_producto', methods=['POST'])
