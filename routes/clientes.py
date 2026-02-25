@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import login_required
 from models import db, Cliente
 
 clientes_bp = Blueprint('clientes', __name__)
 
 
 @clientes_bp.route('/')
+@login_required
 def index():
     q = request.args.get('q', '')
     if q:
@@ -22,6 +24,7 @@ def index():
 
 
 @clientes_bp.route('/nuevo', methods=['GET', 'POST'])
+@login_required
 def nuevo():
     if request.method == 'POST':
         cliente = Cliente(
@@ -40,12 +43,14 @@ def nuevo():
 
 
 @clientes_bp.route('/<int:id>')
+@login_required
 def detalle(id):
     cliente = Cliente.query.get_or_404(id)
     return render_template('clientes/detail.html', cliente=cliente)
 
 
 @clientes_bp.route('/nuevo_rapido', methods=['POST'])
+@login_required
 def nuevo_rapido():
     nombre = request.form.get('nombre', '').strip()
     apellido = request.form.get('apellido', '').strip()
@@ -66,6 +71,7 @@ def nuevo_rapido():
 
 
 @clientes_bp.route('/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
 def editar(id):
     cliente = Cliente.query.get_or_404(id)
     if request.method == 'POST':
@@ -82,6 +88,7 @@ def editar(id):
 
 
 @clientes_bp.route('/<int:id>/eliminar', methods=['POST'])
+@login_required
 def eliminar(id):
     cliente = Cliente.query.get_or_404(id)
     if cliente.talleres or cliente.ventas:

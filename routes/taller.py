@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models import db, Taller, TallerProducto, TallerServicio, Cliente, Producto, Servicio, MovimientoCaja, FORMAS_PAGO, CUENTAS_CAJA
+from flask_login import login_required
+from models import db, Taller, TallerProducto, TallerServicio, Cliente, Producto, Servicio, MovimientoCaja, Tecnico, FORMAS_PAGO, CUENTAS_CAJA
 from datetime import datetime
 
 taller_bp = Blueprint('taller', __name__)
@@ -20,6 +21,7 @@ def _next_numero():
 
 
 @taller_bp.route('/')
+@login_required
 def index():
     estado = request.args.get('estado', '')
     q = request.args.get('q', '')
@@ -37,14 +39,20 @@ def index():
                 Taller.cliente_id.in_(clientes_ids) if clientes_ids else False,
             )
         )
-    talleres = query.order_by(Taller.created_at.desc()).all()
+    # Orders with pending debt (entregado but unpaid) appear first
+    talleres = query.order_by(
+        db.case((db.and_(Taller.estado == 'entregado', Taller.pagado == False), 0), else_=1),
+        Taller.created_at.desc()
+    ).all()
     return render_template('taller/index.html', talleres=talleres, estados=ESTADOS,
                            estado_filtro=estado, q=q)
 
 
 @taller_bp.route('/nuevo', methods=['GET', 'POST'])
+@login_required
 def nuevo():
     clientes = Cliente.query.order_by(Cliente.apellido).all()
+    tecnicos = Tecnico.query.filter_by(activo=True).order_by(Tecnico.nombre).all()
     if request.method == 'POST':
         fecha_est = None
         if request.form.get('fecha_estimada_entrega'):
@@ -71,10 +79,11 @@ def nuevo():
         flash(f'Orden de taller #{taller.numero} creada correctamente.', 'success')
         return redirect(url_for('taller.detalle', id=taller.id))
     return render_template('taller/form.html', taller=None, clientes=clientes,
-                           estados=ESTADOS, titulo='Nueva Orden de Taller')
+                           estados=ESTADOS, tecnicos=tecnicos, titulo='Nueva Orden de Taller')
 
 
 @taller_bp.route('/<int:id>')
+@login_required
 def detalle(id):
     taller = Taller.query.get_or_404(id)
     productos = Producto.query.filter_by(activo=True).order_by(Producto.nombre).all()
@@ -85,9 +94,11 @@ def detalle(id):
 
 
 @taller_bp.route('/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
 def editar(id):
     taller = Taller.query.get_or_404(id)
     clientes = Cliente.query.order_by(Cliente.apellido).all()
+    tecnicos = Tecnico.query.filter_by(activo=True).order_by(Tecnico.nombre).all()
     if request.method == 'POST':
         fecha_est = taller.fecha_estimada_entrega
         if request.form.get('fecha_estimada_entrega'):
@@ -110,10 +121,11 @@ def editar(id):
         flash('Orden de taller actualizada.', 'success')
         return redirect(url_for('taller.detalle', id=taller.id))
     return render_template('taller/form.html', taller=taller, clientes=clientes,
-                           estados=ESTADOS, titulo=f'Editar Orden #{taller.numero}')
+                           estados=ESTADOS, tecnicos=tecnicos, titulo=f'Editar Orden #{taller.numero}')
 
 
 @taller_bp.route('/<int:id>/agregar_producto', methods=['POST'])
+@login_required
 def agregar_producto(id):
     taller = Taller.query.get_or_404(id)
     producto_id = int(request.form['producto_id'])
@@ -138,6 +150,7 @@ def agregar_producto(id):
 
 
 @taller_bp.route('/<int:id>/quitar_producto/<int:tp_id>', methods=['POST'])
+@login_required
 def quitar_producto(id, tp_id):
     tp = TallerProducto.query.get_or_404(tp_id)
     tp.producto.stock_actual += tp.cantidad
@@ -148,6 +161,7 @@ def quitar_producto(id, tp_id):
 
 
 @taller_bp.route('/<int:id>/agregar_servicio', methods=['POST'])
+@login_required
 def agregar_servicio(id):
     taller = Taller.query.get_or_404(id)
     servicio_id = int(request.form['servicio_id'])
@@ -166,6 +180,7 @@ def agregar_servicio(id):
 
 
 @taller_bp.route('/<int:id>/quitar_servicio/<int:ts_id>', methods=['POST'])
+@login_required
 def quitar_servicio(id, ts_id):
     ts = TallerServicio.query.get_or_404(ts_id)
     db.session.delete(ts)
@@ -175,6 +190,7 @@ def quitar_servicio(id, ts_id):
 
 
 @taller_bp.route('/<int:id>/entregar', methods=['POST'])
+@login_required
 def entregar(id):
     taller = Taller.query.get_or_404(id)
     if taller.estado == 'entregado':
@@ -183,16 +199,50 @@ def entregar(id):
 
     forma_pago = request.form.get('forma_pago', 'efectivo')
     taller.estado = 'entregado'
-    taller.pagado = True
     taller.forma_pago = forma_pago
     taller.fecha_entrega = datetime.utcnow()
 
+    if forma_pago == 'cuenta_corriente':
+        taller.pagado = False
+        db.session.commit()
+        flash(f'Orden #{taller.numero} entregada en cuenta corriente. La deuda queda pendiente de cobro.', 'warning')
+    else:
+        taller.pagado = True
+        monto = taller.total_final
+        mov = MovimientoCaja(
+            tipo='ingreso',
+            cuenta='servicio_tecnico',
+            forma_pago=forma_pago,
+            concepto=f'Reparación #{taller.numero} - {taller.cliente.nombre_completo}',
+            monto=monto,
+            referencia_tipo='taller',
+            referencia_id=taller.id,
+            fecha=datetime.utcnow(),
+        )
+        db.session.add(mov)
+        db.session.commit()
+        flash(f'Orden #{taller.numero} marcada como entregada y paga. Se registró ingreso de ${monto:.2f} en Caja.', 'success')
+    return redirect(url_for('taller.detalle', id=id))
+
+
+@taller_bp.route('/<int:id>/cobrar_deuda', methods=['POST'])
+@login_required
+def cobrar_deuda(id):
+    taller = Taller.query.get_or_404(id)
+    if taller.pagado:
+        flash('Esta orden ya fue pagada.', 'warning')
+        return redirect(url_for('taller.detalle', id=id))
+
+    forma_pago = request.form.get('forma_pago', 'efectivo')
     monto = taller.total_final
+    taller.pagado = True
+    taller.forma_pago = forma_pago
+
     mov = MovimientoCaja(
         tipo='ingreso',
         cuenta='servicio_tecnico',
         forma_pago=forma_pago,
-        concepto=f'Reparación #{taller.numero} - {taller.cliente.nombre_completo}',
+        concepto=f'Cobro cuenta corriente #{taller.numero} - {taller.cliente.nombre_completo}',
         monto=monto,
         referencia_tipo='taller',
         referencia_id=taller.id,
@@ -200,11 +250,12 @@ def entregar(id):
     )
     db.session.add(mov)
     db.session.commit()
-    flash(f'Orden #{taller.numero} marcada como entregada y paga. Se registró ingreso de ${monto:.2f} en Caja.', 'success')
+    flash(f'Deuda de la orden #{taller.numero} cobrada. Se registró ingreso de ${monto:.2f} en Caja.', 'success')
     return redirect(url_for('taller.detalle', id=id))
 
 
 @taller_bp.route('/<int:id>/cambiar_estado', methods=['POST'])
+@login_required
 def cambiar_estado(id):
     taller = Taller.query.get_or_404(id)
     nuevo_estado = request.form.get('estado')
@@ -217,6 +268,7 @@ def cambiar_estado(id):
 
 
 @taller_bp.route('/<int:id>/eliminar', methods=['POST'])
+@login_required
 def eliminar(id):
     taller = Taller.query.get_or_404(id)
     # Devolver stock de los productos usados
@@ -229,6 +281,7 @@ def eliminar(id):
 
 
 @taller_bp.route('/<int:id>/imprimir')
+@login_required
 def imprimir(id):
     taller = Taller.query.get_or_404(id)
     return render_template('taller/print.html', taller=taller)

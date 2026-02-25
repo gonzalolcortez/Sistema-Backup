@@ -41,15 +41,29 @@
         <span class="fw-semibold"><i class="bi bi-wrench me-1"></i>Órdenes de Taller</span>
         <a href="{{ url_for('taller.nuevo') }}" class="btn btn-sm btn-primary">Nueva Orden</a>
       </div>
+      {% set deudas = cliente.talleres|selectattr('estado', 'equalto', 'entregado')|rejectattr('pagado')|list %}
+      {% if deudas %}
+      <div class="p-3 bg-warning bg-opacity-25 border-bottom">
+        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+        <strong>Deuda en cuenta corriente:</strong>
+        ${{ "%.2f"|format(deudas|sum(attribute='total_final')) }}
+        — {{ deudas|length }} orden(es) pendiente(s)
+      </div>
+      {% endif %}
       {% if cliente.talleres %}
       <table class="table table-hover">
         <thead><tr><th>#</th><th>Equipo</th><th>Estado</th><th>Total</th><th></th></tr></thead>
         <tbody>
         {% for t in cliente.talleres|sort(attribute='created_at', reverse=True) %}
-        <tr>
+        <tr {% if t.estado == 'entregado' and not t.pagado %}class="table-warning"{% endif %}>
           <td class="fw-semibold text-primary">#{{ t.numero }}</td>
           <td>{{ t.tipo_equipo }} {{ t.marca }} {{ t.modelo }}</td>
-          <td><span class="badge badge-{{ t.estado }}">{{ t.estado_display }}</span></td>
+          <td>
+            <span class="badge badge-{{ t.estado }}">{{ t.estado_display }}</span>
+            {% if t.estado == 'entregado' and not t.pagado %}
+            <span class="badge bg-danger ms-1">Deuda</span>
+            {% endif %}
+          </td>
           <td>${{ "%.2f"|format(t.total_final) }}</td>
           <td><a href="{{ url_for('taller.detalle', id=t.id) }}" class="btn btn-sm btn-outline-primary py-0 px-2">Ver</a></td>
         </tr>

@@ -1,5 +1,41 @@
 from extensions import db
 from datetime import datetime
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+
+
+class Usuario(UserMixin, db.Model):
+    __tablename__ = 'usuarios'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False, unique=True)
+    nombre = db.Column(db.String(120), nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    activo = db.Column(db.Boolean, default=True)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    @property
+    def is_active(self):
+        return self.activo
+
+
+class Tecnico(db.Model):
+    __tablename__ = 'tecnicos'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(150), nullable=False)
+    es_tercerizado = db.Column(db.Boolean, default=False)
+    empresa_tercerizado = db.Column(db.String(150))
+    activo = db.Column(db.Boolean, default=True)
+
+    @property
+    def nombre_display(self):
+        if self.es_tercerizado and self.empresa_tercerizado:
+            return f"Técnico Tercerizado - {self.empresa_tercerizado}"
+        return self.nombre
 
 
 class Cliente(db.Model):

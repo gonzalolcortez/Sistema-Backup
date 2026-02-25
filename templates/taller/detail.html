@@ -11,7 +11,12 @@
 </a>
 {% if taller.estado != 'entregado' and taller.estado != 'cancelado' %}
 <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalEntregar">
-  <i class="bi bi-check-circle me-1"></i>Entregado y Pago
+  <i class="bi bi-check-circle me-1"></i>Entregado
+</button>
+{% endif %}
+{% if taller.estado == 'entregado' and not taller.pagado %}
+<button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#modalCobrarDeuda">
+  <i class="bi bi-cash-coin me-1"></i>Cobrar Deuda
 </button>
 {% endif %}
 <form method="post" action="{{ url_for('taller.eliminar', id=taller.id) }}" class="d-inline"
@@ -81,10 +86,14 @@
       </div>
       <div class="mt-1">
         <span class="badge badge-{{ taller.estado }} fs-6">{{ taller.estado_display }}</span>
-        {% if taller.pagado %}<span class="badge bg-success ms-1">Pagado</span>{% endif %}
+        {% if taller.pagado %}<span class="badge bg-success ms-1">Pagado</span>
+        {% elif taller.estado == 'entregado' %}<span class="badge bg-danger ms-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Deuda Pendiente</span>
+        {% endif %}
       </div>
       {% if taller.pagado and taller.forma_pago %}
       <div class="small text-muted mt-1">Cobrado por: {{ dict(formas_pago).get(taller.forma_pago, taller.forma_pago) }}</div>
+      {% elif taller.estado == 'entregado' and not taller.pagado %}
+      <div class="small text-danger mt-1"><i class="bi bi-clock me-1"></i>Pendiente de cobro — Cuenta Corriente</div>
       {% endif %}
     </div>
   </div>
@@ -226,7 +235,7 @@
 </div>
 
 {% if taller.estado != 'entregado' and taller.estado != 'cancelado' %}
-<!-- Modal: Entregar y Pago -->
+<!-- Modal: Entregar -->
 <div class="modal fade" id="modalEntregar" tabindex="-1" aria-labelledby="modalEntregarLabel" aria-hidden="true">
   <div class="modal-dialog modal-sm">
     <div class="modal-content">
@@ -243,10 +252,43 @@
             <option value="{{ val }}">{{ label }}</option>
             {% endfor %}
           </select>
+          <div class="form-text mt-2">Si seleccionás <strong>Cuenta Corriente</strong>, se registrará como deuda del cliente.</div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
           <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i>Confirmar Entrega</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if taller.estado == 'entregado' and not taller.pagado %}
+<!-- Modal: Cobrar Deuda -->
+<div class="modal fade" id="modalCobrarDeuda" tabindex="-1" aria-labelledby="modalCobrarDeudaLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalCobrarDeudaLabel"><i class="bi bi-cash-coin me-2 text-warning"></i>Cobrar Deuda #{{ taller.numero }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{{ url_for('taller.cobrar_deuda', id=taller.id) }}">
+        <div class="modal-body">
+          <p class="mb-1 small text-muted">Cliente: <strong>{{ taller.cliente.nombre_completo }}</strong></p>
+          <p class="mb-3 small text-muted">Total a cobrar: <strong class="text-danger fs-6">${{ "%.2f"|format(taller.total_final) }}</strong></p>
+          <label class="form-label fw-semibold">Forma de Pago *</label>
+          <select name="forma_pago" class="form-select" required>
+            {% for val, label in formas_pago %}
+            {% if val != 'cuenta_corriente' %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning"><i class="bi bi-check-lg me-1"></i>Registrar Cobro</button>
         </div>
       </form>
     </div>

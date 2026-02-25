@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required
 from models import db, Venta, VentaItem, Producto, Servicio, Cliente, MovimientoCaja, FORMAS_PAGO
 from datetime import datetime
 
@@ -6,12 +7,14 @@ ventas_bp = Blueprint('ventas', __name__)
 
 
 @ventas_bp.route('/')
+@login_required
 def index():
     ventas = Venta.query.order_by(Venta.fecha.desc()).all()
     return render_template('ventas/index.html', ventas=ventas)
 
 
 @ventas_bp.route('/nueva', methods=['GET', 'POST'])
+@login_required
 def nueva():
     clientes = Cliente.query.order_by(Cliente.apellido).all()
     productos_obj = Producto.query.filter_by(activo=True).order_by(Producto.nombre).all()
@@ -127,6 +130,7 @@ def nueva():
 
 
 @ventas_bp.route('/<int:id>/eliminar', methods=['POST'])
+@login_required
 def eliminar(id):
     venta = Venta.query.get_or_404(id)
     # Devolver stock

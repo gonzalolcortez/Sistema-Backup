@@ -1,10 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required
 from models import db, Producto, Servicio, Categoria
 
 productos_bp = Blueprint('productos', __name__)
 
 
 @productos_bp.route('/')
+@login_required
 def index():
     tab = request.args.get('tab', 'productos')
     productos = Producto.query.order_by(Producto.nombre).all()
@@ -17,6 +19,7 @@ def index():
 # ── Categorías ──────────────────────────────────────────────────────────────
 
 @productos_bp.route('/categoria/nueva', methods=['POST'])
+@login_required
 def nueva_categoria():
     nombre = request.form.get('nombre', '').strip()
     if nombre:
@@ -28,6 +31,7 @@ def nueva_categoria():
 
 
 @productos_bp.route('/categoria/<int:id>/eliminar', methods=['POST'])
+@login_required
 def eliminar_categoria(id):
     cat = Categoria.query.get_or_404(id)
     if cat.productos:
@@ -42,6 +46,7 @@ def eliminar_categoria(id):
 # ── Productos ────────────────────────────────────────────────────────────────
 
 @productos_bp.route('/nuevo', methods=['GET', 'POST'])
+@login_required
 def nuevo_producto():
     categorias = Categoria.query.order_by(Categoria.nombre).all()
     if request.method == 'POST':
@@ -66,6 +71,7 @@ def nuevo_producto():
 
 
 @productos_bp.route('/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
 def editar_producto(id):
     prod = Producto.query.get_or_404(id)
     categorias = Categoria.query.order_by(Categoria.nombre).all()
@@ -87,6 +93,7 @@ def editar_producto(id):
 
 
 @productos_bp.route('/<int:id>/eliminar', methods=['POST'])
+@login_required
 def eliminar_producto(id):
     prod = Producto.query.get_or_404(id)
     prod.activo = False
@@ -98,6 +105,7 @@ def eliminar_producto(id):
 # ── Servicios ────────────────────────────────────────────────────────────────
 
 @productos_bp.route('/servicio/nuevo', methods=['GET', 'POST'])
+@login_required
 def nuevo_servicio():
     if request.method == 'POST':
         serv = Servicio(
@@ -115,6 +123,7 @@ def nuevo_servicio():
 
 
 @productos_bp.route('/servicio/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
 def editar_servicio(id):
     serv = Servicio.query.get_or_404(id)
     if request.method == 'POST':
@@ -130,6 +139,7 @@ def editar_servicio(id):
 
 
 @productos_bp.route('/servicio/<int:id>/eliminar', methods=['POST'])
+@login_required
 def eliminar_servicio(id):
     serv = Servicio.query.get_or_404(id)
     serv.activo = False
