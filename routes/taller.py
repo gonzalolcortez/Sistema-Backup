@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
-from models import db, Taller, TallerProducto, TallerServicio, Cliente, Producto, Servicio, MovimientoCaja, Tecnico, FORMAS_PAGO, CUENTAS_CAJA
+from models import db, Taller, TallerProducto, TallerServicio, Cliente, Producto, Servicio, MovimientoCaja, Tecnico, FORMAS_PAGO, CUENTAS_CAJA, Categoria
 from datetime import datetime
 
 taller_bp = Blueprint('taller', __name__)
@@ -90,8 +90,9 @@ def detalle(id):
     taller = Taller.query.get_or_404(id)
     productos = Producto.query.filter_by(activo=True).order_by(Producto.nombre).all()
     servicios = Servicio.query.filter_by(activo=True).order_by(Servicio.nombre).all()
+    categorias = Categoria.query.order_by(Categoria.nombre).all()
     return render_template('taller/detail.html', taller=taller, estados=ESTADOS,
-                           productos=productos, servicios=servicios,
+                           productos=productos, servicios=servicios, categorias=categorias,
                            formas_pago=FORMAS_PAGO, cuentas_caja=CUENTAS_CAJA)
 
 

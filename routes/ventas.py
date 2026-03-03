@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
-from models import db, Venta, VentaItem, Producto, Servicio, Cliente, MovimientoCaja, FORMAS_PAGO
+from models import db, Venta, VentaItem, Producto, Servicio, Cliente, MovimientoCaja, FORMAS_PAGO, Categoria
 from datetime import datetime
 
 ventas_bp = Blueprint('ventas', __name__)
@@ -19,8 +19,11 @@ def nueva():
     clientes = Cliente.query.order_by(Cliente.apellido).all()
     productos_obj = Producto.query.filter_by(activo=True).order_by(Producto.nombre).all()
     servicios_obj = Servicio.query.filter_by(activo=True).order_by(Servicio.nombre).all()
+    categorias = Categoria.query.order_by(Categoria.nombre).all()
 
-    productos_json = [{'id': p.id, 'nombre': p.nombre, 'precio_venta': p.precio_venta, 'stock_actual': p.stock_actual} for p in productos_obj]
+    productos_json = [{'id': p.id, 'nombre': p.nombre, 'precio_venta': p.precio_venta,
+                       'stock_actual': p.stock_actual, 'codigo_barras': p.codigo_barras or '',
+                       'categoria_id': p.categoria_id} for p in productos_obj]
     servicios_json = [{'id': s.id, 'nombre': s.nombre, 'precio': s.precio} for s in servicios_obj]
 
     if request.method == 'POST':
@@ -37,7 +40,7 @@ def nueva():
             flash('Debe agregar al menos un producto o servicio.', 'danger')
             return render_template('ventas/form.html', clientes=clientes,
                                    productos=productos_json, servicios=servicios_json,
-                                   formas_pago=FORMAS_PAGO)
+                                   formas_pago=FORMAS_PAGO, categorias=categorias)
 
         venta = Venta(
             cliente_id=cliente_id,
@@ -81,7 +84,7 @@ def nueva():
                 flash(e, 'danger')
             return render_template('ventas/form.html', clientes=clientes,
                                    productos=productos_json, servicios=servicios_json,
-                                   formas_pago=FORMAS_PAGO)
+                                   formas_pago=FORMAS_PAGO, categorias=categorias)
 
         for tipo, obj, cant, precio, sub in items_ok:
             vi = VentaItem(
@@ -126,7 +129,7 @@ def nueva():
 
     return render_template('ventas/form.html', clientes=clientes,
                            productos=productos_json, servicios=servicios_json,
-                           formas_pago=FORMAS_PAGO)
+                           formas_pago=FORMAS_PAGO, categorias=categorias)
 
 
 @ventas_bp.route('/<int:id>/eliminar', methods=['POST'])

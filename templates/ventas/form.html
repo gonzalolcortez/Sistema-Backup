@@ -51,21 +51,30 @@
         <div class="section-title">Productos y Servicios</div>
 
         <!-- Selector rápido -->
-        <div class="row g-2 mb-3 align-items-end">
-          <div class="col-sm-4">
+        <div class="row g-2 mb-2 align-items-end">
+          <div class="col-sm-3">
             <label class="form-label small fw-semibold">Tipo</label>
             <select id="sel-tipo" class="form-select form-select-sm">
               <option value="producto">Producto</option>
               <option value="servicio">Servicio</option>
             </select>
           </div>
-          <div class="col-sm-5">
+          <div class="col-sm-3" id="col-categoria">
+            <label class="form-label small fw-semibold">Categoría</label>
+            <select id="sel-categoria" class="form-select form-select-sm">
+              <option value="">Todas</option>
+              {% for cat in categorias %}
+              <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-sm-4">
             <label class="form-label small fw-semibold">Item</label>
             <select id="sel-item" class="form-select form-select-sm">
               <option value="">Seleccionar…</option>
             </select>
           </div>
-          <div class="col-sm-2">
+          <div class="col-sm-1">
             <label class="form-label small fw-semibold">Cant.</label>
             <input type="number" id="sel-cant" class="form-control form-control-sm" value="1" min="1">
           </div>
@@ -73,6 +82,16 @@
             <button type="button" class="btn btn-sm btn-primary w-100" onclick="agregarItem()">
               <i class="bi bi-plus"></i>
             </button>
+          </div>
+        </div>
+        <!-- Búsqueda por código de barras -->
+        <div class="row g-2 mb-3 align-items-end" id="row-barcode">
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Código de Barras</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+              <input type="text" id="input-barcode" class="form-control" placeholder="Escanear o escribir código…" autocomplete="off">
+            </div>
           </div>
         </div>
 
@@ -126,11 +145,18 @@ servicios.forEach(s => servicioMap[s.id] = s);
 
 const selTipo = document.getElementById('sel-tipo');
 const selItem = document.getElementById('sel-item');
+const selCategoria = document.getElementById('sel-categoria');
+const colCategoria = document.getElementById('col-categoria');
+const rowBarcode = document.getElementById('row-barcode');
 
 function poblarItems() {
   selItem.innerHTML = '<option value="">Seleccionar…</option>';
   const tipo = selTipo.value;
-  const lista = tipo === 'producto' ? productos : servicios;
+  const categoriaId = selCategoria.value;
+  let lista = tipo === 'producto' ? productos : servicios;
+  if (tipo === 'producto' && categoriaId) {
+    lista = lista.filter(p => String(p.categoria_id ?? '') === categoriaId);
+  }
   lista.forEach(obj => {
     const opt = document.createElement('option');
     opt.value = obj.id;
@@ -140,8 +166,40 @@ function poblarItems() {
   });
 }
 
-selTipo.addEventListener('change', poblarItems);
+function toggleProductoControls() {
+  const esProducto = selTipo.value === 'producto';
+  colCategoria.style.display = esProducto ? '' : 'none';
+  rowBarcode.style.display = esProducto ? '' : 'none';
+}
+
+selTipo.addEventListener('change', () => { toggleProductoControls(); poblarItems(); });
+selCategoria.addEventListener('change', poblarItems);
 poblarItems();
+
+// Barcode search: press Enter or lose focus
+document.getElementById('input-barcode').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); buscarPorBarcode(); }
+});
+
+function buscarPorBarcode() {
+  const barcode = document.getElementById('input-barcode').value.trim();
+  if (!barcode) return;
+  const producto = productos.find(p => p.codigo_barras === barcode);
+  const inputEl = document.getElementById('input-barcode');
+  if (producto) {
+    selTipo.value = 'producto';
+    selCategoria.value = '';
+    toggleProductoControls();
+    poblarItems();
+    selItem.value = producto.id;
+    agregarItem();
+    inputEl.value = '';
+    inputEl.focus();
+  } else {
+    inputEl.classList.add('is-invalid');
+    setTimeout(() => inputEl.classList.remove('is-invalid'), 1500);
+  }
+}
 
 let itemCount = 0;
 
