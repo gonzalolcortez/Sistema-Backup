@@ -153,16 +153,25 @@
       {% if taller.estado not in ['entregado', 'cancelado'] %}
       <div class="p-3 border-top bg-light">
         <form method="post" action="{{ url_for('taller.agregar_producto', id=taller.id) }}" class="row g-2 align-items-end">
-          <div class="col-sm-6">
-            <label class="form-label small fw-semibold mb-1">Agregar producto</label>
-            <select name="producto_id" class="form-select form-select-sm" required>
-              <option value="">Seleccionar…</option>
-              {% for p in productos %}
-              <option value="{{ p.id }}">{{ p.nombre }} (stock: {{ p.stock_actual }}) — ${{ "%.2f"|format(p.precio_venta) }}</option>
+          <div class="col-sm-3">
+            <label class="form-label small fw-semibold mb-1">Categoría</label>
+            <select id="taller-cat-filter" class="form-select form-select-sm" onchange="filtrarProductosTaller()">
+              <option value="">Todas</option>
+              {% for cat in categorias %}
+              <option value="{{ cat.id }}">{{ cat.nombre }}</option>
               {% endfor %}
             </select>
           </div>
-          <div class="col-sm-3">
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold mb-1">Agregar producto</label>
+            <select name="producto_id" id="taller-producto-sel" class="form-select form-select-sm" required>
+              <option value="">Seleccionar…</option>
+              {% for p in productos %}
+              <option value="{{ p.id }}" data-categoria="{{ p.categoria_id or '' }}">{{ p.nombre }} (stock: {{ p.stock_actual }}) — ${{ "%.2f"|format(p.precio_venta) }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-sm-2">
             <label class="form-label small fw-semibold mb-1">Cantidad</label>
             <input type="number" name="cantidad" class="form-control form-control-sm" value="1" min="1">
           </div>
@@ -295,4 +304,22 @@
   </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function filtrarProductosTaller() {
+  const catId = document.getElementById('taller-cat-filter').value;
+  const sel = document.getElementById('taller-producto-sel');
+  const opts = sel.querySelectorAll('option');
+  opts.forEach(opt => {
+    if (!opt.value) return;
+    opt.hidden = catId ? opt.dataset.categoria !== catId : false;
+  });
+  // Reset selection if current option is hidden
+  if (sel.selectedOptions[0] && sel.selectedOptions[0].hidden) {
+    sel.value = '';
+  }
+}
+</script>
 {% endblock %}

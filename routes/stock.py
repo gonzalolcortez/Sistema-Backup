@@ -16,7 +16,10 @@ def index():
         productos = [p for p in query.all() if p.stock_actual > p.stock_minimo]
     else:
         productos = query.order_by(Producto.nombre).all()
-    return render_template('stock/index.html', productos=productos, filtro=filtro)
+    total_compra = sum(p.stock_actual * p.precio_compra for p in productos)
+    total_venta = sum(p.stock_actual * p.precio_venta for p in productos)
+    return render_template('stock/index.html', productos=productos, filtro=filtro,
+                           total_compra=total_compra, total_venta=total_venta)
 
 
 @stock_bp.route('/ajuste/<int:id>', methods=['GET', 'POST'])

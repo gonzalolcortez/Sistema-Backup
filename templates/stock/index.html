@@ -9,6 +9,21 @@
 {% endblock %}
 
 {% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-sm-6">
+    <div class="form-card py-2 text-center">
+      <div class="text-muted small">Valor en Stock (Precio Compra)</div>
+      <div class="fw-bold fs-5 text-primary">${{ "%.2f"|format(total_compra) }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6">
+    <div class="form-card py-2 text-center">
+      <div class="text-muted small">Valor en Stock (Precio Venta)</div>
+      <div class="fw-bold fs-5 text-success">${{ "%.2f"|format(total_venta) }}</div>
+    </div>
+  </div>
+</div>
+
 <div class="mb-3 d-flex gap-2 flex-wrap">
   <a href="?filtro=todos" class="btn btn-sm {% if filtro == 'todos' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">Todos</a>
   <a href="?filtro=bajo" class="btn btn-sm {% if filtro == 'bajo' %}btn-danger{% else %}btn-outline-danger{% endif %}">
