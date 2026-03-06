@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
 from models import db, Taller, TallerProducto, TallerServicio, Cliente, Producto, Servicio, MovimientoCaja, Tecnico, FORMAS_PAGO, CUENTAS_CAJA, Categoria
 from datetime import datetime
+from whatsapp_api import enviar_whatsapp
 
 taller_bp = Blueprint('taller', __name__)
 
@@ -78,6 +79,27 @@ def nuevo():
         )
         db.session.add(taller)
         db.session.commit()
+
+        # Send WhatsApp notification to the client
+        try:
+            cliente = taller.cliente
+            if cliente and cliente.telefono:
+                equipo_parts = [p for p in [taller.tipo_equipo, taller.marca, taller.modelo] if p]
+                equipo = " ".join(equipo_parts) if equipo_parts else "Sin especificar"
+                mensaje = (
+                    f"🔧 Servicio Técnico\n\n"
+                    f"Hola {cliente.nombre_completo}\n\n"
+                    f"Su equipo fue recibido correctamente.\n\n"
+                    f"📋 Orden: #{taller.numero}\n"
+                    f"📱 Equipo: {equipo}\n"
+                    f"🛠 Problema: {taller.descripcion_problema}\n\n"
+                    f"Estado actual: En diagnóstico\n\n"
+                    f"Le avisaremos cuando haya novedades."
+                )
+                enviar_whatsapp(cliente.telefono, mensaje)
+        except Exception:
+            pass
+
         flash(f'Orden de taller #{taller.numero} creada correctamente.', 'success')
         return redirect(url_for('taller.detalle', id=taller.id))
     return render_template('taller/form.html', taller=None, clientes=clientes,
@@ -291,3 +313,22 @@ def eliminar(id):
 def imprimir(id):
     taller = Taller.query.get_or_404(id)
     return render_template('taller/print.html', taller=taller)
+
+
+@taller_bp.route('/<int:id>/ticket')
+@login_required
+def ticket(id):
+    taller = Taller.query.get_or_404(id)
+    orden = {
+        'fecha': taller.fecha_ingreso.strftime('%d/%m/%Y'),
+        'numero': taller.numero,
+        'cliente': taller.cliente.nombre_completo,
+        'equipo': taller.tipo_equipo or '—',
+        'marca': taller.marca or '—',
+        'modelo': taller.modelo or '—',
+        'problema': taller.descripcion_problema,
+        'precio': f"{taller.costo_estimado:.2f}" if taller.costo_estimado is not None else '—',
+        'tecnico': taller.tecnico or '—',
+        'entrega': taller.fecha_estimada_entrega.strftime('%d/%m/%Y') if taller.fecha_estimada_entrega else '—',
+    }
+    return render_template('taller/ticket.html', orden=orden)
